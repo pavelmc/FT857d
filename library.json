@@ -1,0 +1,15 @@
+{
+  "name": "ft857d",
+  "keywords": "CAT, radio, serial, hamradio",
+  "description": "Simulate a Yaesu FT-857D radio from the CAT point of view",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pavelmc/ft857d.git"
+  },
+  "version": "0.1",
+  "exclude": [
+    "*.zip"
+  ],
+  "frameworks": "arduino",
+  "platforms": "*"
+}

@@ -1,0 +1,1 @@
+Simply put the "ft857d" folder in your Arduino "libraries" folder.
