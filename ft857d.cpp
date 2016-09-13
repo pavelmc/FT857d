@@ -1,5 +1,4 @@
 /*************************************************************************
- *
  * FT857D CAT Library, by Pavel Milanes, CO7WT, pavelmc@gmail.com
  *
  * The goal of this lib is to act as a Yaesu FT-857D radio from the
@@ -10,9 +9,12 @@
  * see it here https://github.com/pavelmc/arduino-arcs
  *
  * This code has been built with the review of various sources:
- * - James Buck, VE3BUX, FT857D Lib [http://www.ve3bux.com]
+ * - James Buck, VE3BUX, FT857D arduino Lib [http://www.ve3bux.com]
  * - Hamlib source code
- * - flrig source code
+ * - FLRig source code
+ * - Chirp source code
+ *
+ * You can always found the last version in https://github.com/pavelmc/ft857d/
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +34,13 @@
 #include "Arduino.h"
 #include "ft857d.h"
 
-// function work vars
-static volatile FuncPtrVoid empty[1];
-static volatile FuncPtrVoidByte emptyB[3];
-static volatile FuncPtrVoidLong emptyL[1];
-static volatile FuncPtrToggles toggle[5];
-static volatile FuncPtrByte fbyte[1];
-static volatile FuncPtrULong ulongf[1];
+// function work vars, must be static & volatile?
+static FuncPtrVoid empty[1];
+static FuncPtrVoidByte emptyB[3];
+static FuncPtrVoidLong emptyL[1];
+static FuncPtrToggles toggle[1];
+static FuncPtrByte fbyte[1];
+static FuncPtrULong ulongf[1];
 
 /*
  * Contructor, simple constructor, it initiates the serial port in the
@@ -51,6 +53,13 @@ void ft857d::begin() {
 
 // Alternative initializer with a custom baudrate and
 void ft857d::begin(unsigned long br, int mode) {
+    /*
+     * Arduino custom modes for the serial:
+     *  SERIAL_5N1; SERIAL_6N1; SERIAL_7N1; SERIAL_8N1; SERIAL_5N2; SERIAL_6N2;
+     *  SERIAL_7N2; SERIAL_8N2; SERIAL_5E1; SERIAL_6E1; SERIAL_7E1; SERIAL_8E1;
+     *  SERIAL_5E2; SERIAL_6E2; SERIAL_7E2; SERIAL_8E2; SERIAL_5O1; SERIAL_6O1;
+     *  SERIAL_7O1; SERIAL_8O1; SERIAL_5O2; SERIAL_6O2; SERIAL_7O2; SERIAL_8O2
+     */
     Serial.begin(br, mode);
     Serial.flush();
 }
@@ -60,19 +69,9 @@ void ft857d::begin(unsigned long br, int mode) {
  * in which you pass a bool to activate/deactivate the function
  */
 
-// LOCK
-void ft857d::addCATLock(void (*userFunc)(boolean)) {
-    toggle[0] = userFunc;
-}
-
 // PTT
 void ft857d::addCATPtt(void (*userFunc)(boolean)) {
-    toggle[1] = userFunc;
-}
-
-// SPLIT
-void ft857d::addCATSplit(void (*userFunc)(boolean)) {
-    toggle[3] = userFunc;
+    toggle[0] = userFunc;
 }
 
 /*
@@ -129,51 +128,29 @@ void ft857d::addCATMSet(void (*userFunc)(byte)) {
  * Periodic call function, this must be placed inside the loop()
  * to check for incomming serial commands.
  */
+
+ // check function
 void ft857d::check() {
     // first check if we have at least 5 bytes waiting on the buffer
     rxBufCount = Serial.available();
     if (rxBufCount < 5) return;
 
-    // if you got here then there is at least 5 bytes waiting, get it.
+    // if you got here then there is at least 5 bytes waiting: get it.
     for (byte i=0; i<5; i++) {
         nullPad[i] = Serial.read();
     }
 
     // now chek for the command in the last byte
     switch (nullPad[4]) {
-        case CAT_LOCK_ON:
+        case CAT_PTT_ON:
             if (toggle[0]) {
                 toggle[0](true);
                 sendACK();
             }
             break;
-        case CAT_LOCK_OFF:
+        case CAT_PTT_OFF:
             if (toggle[0]) {
                 toggle[0](false);
-                sendACK();
-            }
-            break;
-        case CAT_PTT_ON:
-            if (toggle[1]) {
-                toggle[1](true);
-                sendACK();
-            }
-            break;
-        case CAT_PTT_OFF:
-            if (toggle[1]) {
-                toggle[1](false);
-                sendACK();
-            }
-            break;
-        case CAT_SPLIT_ON:
-            if (toggle[3]) {
-                toggle[3](true);
-                sendACK();
-            }
-            break;
-        case CAT_SPLIT_OFF:
-            if (toggle[3]) {
-                toggle[3](false);
                 sendACK();
             }
             break;
@@ -196,21 +173,22 @@ void ft857d::check() {
             }
             break;
         case CAT_RX_FREQ_CMD:
-            if (emptyL[0] and emptyB[0]) sendFreqMode();
+            if (emptyL[0] and emptyB[0]) sendFreqMode(); // without ACK
             break;
         case CAT_HAMLIB_EEPROM:
             readEeprom();
             break;
         case CAT_RX_DATA_CMD:
-            if (emptyB[1]) rxStatus();
+            if (emptyB[1]) rxStatus(); // without ACK
             break;
         case CAT_TX_DATA_CMD:
-            if (emptyB[2]) sendTxStatus();
+            if (emptyB[2]) sendTxStatus(); // without ACK
             break;
-
+        default:
+            sendACK();
+            break;
     }
 }
-
 
 // set a frequency
 void ft857d::fset() {
@@ -250,23 +228,29 @@ void ft857d::sendFreqMode() {
     sent(5);
 }
 
-
 // READ EEPROM, tis is a trick of Hamlib
 void ft857d::readEeprom() {
-    // the request is for two bytes and the nullpad 0,1 has the address
-    // 0x00, 0x78 => 0x00, 0x00: only the first byte is important
+    // This is to make hamlib happy, PC requested reading two bytes
+    // we must answer with two bytes, we forge it as empty ones or...
+    // if the second byte in the request is 0x78 we have to send the first
+    // with the 5th bit set if the USB or zero if LSB.
 
-    // clear the nullpad
-    npadClear();
+    // The user registered the function?
+    if (emptyB[0] and nullPad[1] == 0x78) {
+        // clear the nullpad & get the data in place
+        npadClear();
+        nullPad[0] = emptyB[0]();
 
-    // build the data
-    nullPad[0] = 0x5f;  // arbitrary value until I manages to now what is the correct one
-    nullPad[1] = 0x00;
+        // check, it must be a bit argument
+        if (nullPad[0] != 0) nullPad[0] = 1<<5;
+    } else {
+        // simply send it like LSB
+        npadClear();
+    }
 
     // sent the data
     sent(2);
 }
-
 
 // read the rx Status
 void ft857d::rxStatus() {
@@ -294,10 +278,8 @@ void ft857d::rxStatus() {
 }
 
 // procedure to clear the nullpad
-
-// clear the byte array
 void ft857d::npadClear() {
-    // thi is used to initialize the nullpad
+    // this is used to initialize the nullpad
     for (byte i=0; i<5; i++) {
         nullPad[i] = 0;
     }
@@ -311,12 +293,17 @@ void ft857d::sent(byte amount) {
     }
 }
 
+// send and ACK from "radio" to PC, this is not documented in the CAT documents
+// but we follows the hamlib standard that obey the radio standard.
 void ft857d::sendACK() {
     // send and ACK for the command that need it
     Serial.write(ACK);
 }
 
-// taken and adapted from hamlib codes
+/*
+ * This two functions that follows was taken and adapted from hamlib code
+ */
+
 // put the freq in the nullpad array
 void ft857d::to_bcd_be(unsigned long f) {
     unsigned char a;
@@ -326,8 +313,6 @@ void ft857d::to_bcd_be(unsigned long f) {
 
     // clear the nullpad
     npadClear();
-
-
     nullPad[3] &= 0x0f;
     nullPad[3] |= (f%10)<<4;
     f /= 10;
@@ -341,7 +326,6 @@ void ft857d::to_bcd_be(unsigned long f) {
     }
 }
 
-// taken and adapted from hamlib code
 // put the freq in the freq var from the nullpad array
 void ft857d::from_bcd_be() {
     // {0x01,0x40,0x07,0x00,0x01} tunes to 14.070MHz

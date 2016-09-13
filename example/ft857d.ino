@@ -1,5 +1,4 @@
 /*************************************************************************
- *
  * FT857D CAT Library, by Pavel Milanes, CO7WT, pavelmc@gmail.com
  *
  * The goal of this lib is to act as a Yaesu FT-857D radio from the
@@ -10,9 +9,12 @@
  * see it here https://github.com/pavelmc/arduino-arcs
  *
  * This code has been built with the review of various sources:
- * - James Buck, VE3BUX, FT857D Lib [http://www.ve3bux.com]
+ * - James Buck, VE3BUX, FT857D arduino Lib [http://www.ve3bux.com]
  * - Hamlib source code
- * - flrig source code
+ * - FLRig source code
+ * - Chirp source code
+ *
+ * You can always found the last version in https://github.com/pavelmc/ft857d/
  *
  * This is the example for the library, just upload it to a Uno and
  * configure your software with 57600 @ 8N1 and enjoy
@@ -32,62 +34,41 @@
  *
  * **************************************************************************/
 
+// Include the library
 #include <ft857d.h>
 
+// Instantiate the library
 ft857d radio = ft857d();
 
-// variables
+// Variables
 unsigned long freq = 7110000;
-boolean lock = false;
 boolean ptt = false;
 boolean splitActive = false;
 boolean vfoAActive = true;
 byte mode = 0;
-int ritDelta = 0;
-
 
 // radio modes
 #define MODE_LSB 00
 #define MODE_USB 01
 #define MODE_CW 02
 
+/*
+ * DEBUG flag, uncomment it if you want to test it by hand and check a debug
+ * comment in the serial console every time you successfully change something
+ */
 
-// DEBUG flag, uncomment it if you want to test it by hand
 //#define DEBUG true
-
-// function to run when we must lock/unlock the transceiver
-void catLock(boolean lockf) {
-    // the var lock follows the value passed, but you can do a few more thing here
-    lock = lockf;
-
-    #if defined (DEBUG)
-    // debug
-    Serial.print("Lock Status is: ");
-    Serial.println(lock);
-    #endif
-}
 
 // function to run when we must put radio on TX/RX
 void catGoPtt(boolean pttf) {
-    // the var ptt follows the value passed, but you can do a few more thing here
+    // the var ptt follows the value passed
+    // but you can do a few more things here
     ptt = pttf;
 
     #if defined (DEBUG)
     // debug
     Serial.print("PTT Status is: ");
     Serial.println(ptt);
-    #endif
-}
-
-// function to run when split is toggled
-void catGoSplit(boolean splitf) {
-    // the var ritActive follows the value passed, but you can do a few more thing here
-    splitActive = splitf;
-
-    #if defined (DEBUG)
-    // debug
-    Serial.print("RIT Status is: ");
-    Serial.println(splitActive);
     #endif
 }
 
@@ -129,7 +110,8 @@ void catSetMode(byte m) {
 
 // function to pass the freq to the cat library
 unsigned long catGetFreq() {
-    // this must return the freq as an unsigned long in Hz, you must prepare it before
+    // this must return the freq as an unsigned long in Hz
+    // you must prepare it before passing it.
 
     #if defined (DEBUG)
     // debug
@@ -143,6 +125,7 @@ unsigned long catGetFreq() {
 // function to pass the mode to the cat library
 byte catGetMode() {
     // this must return the mode in the wat the CAT protocol expect it
+    // in this example we use the same naming schema that the CAT definition
 
     #if defined (DEBUG)
     // debug
@@ -188,21 +171,21 @@ byte catGetTXStatus() {
     Serial.println("Asked for TX status");
     #endif
 
-    // you have to craft the byte from your data, we will built it from
-    // our data
+    // you have to craft the byte from your data
+    // we will built it from our data
     byte r = 0;
+
     // we fix the TX power to half scale (8)
     r = ptt<<7 + splitActive<<5 + 8;
 
+    // pass it away
     return r;
 }
 
-
+// main setup procedure
 void setup() {
     // preload the vars in the cat library
-    radio.addCATLock(catLock);
     radio.addCATPtt(catGoPtt);
-    radio.addCATSplit(catGoSplit);
     radio.addCATAB(catGoToggleVFOs);
     radio.addCATFSet(catSetFreq);
     radio.addCATMSet(catSetMode);
@@ -211,16 +194,17 @@ void setup() {
     radio.addCATSMeter(catGetSMeter);
     radio.addCATTXStatus(catGetTXStatus);
 
-    // now we activate the library
+    // now we activate the library, 57600 bauds @ 8N1
     radio.begin(57600, SERIAL_8N1);
 
     #if defined (DEBUG)
     // serial welcome
     Serial.println("CAT Serial Test Ready");
     #endif
-
 }
 
+// main function, 3, 2, 1: GO!
 void loop() {
+    // we must check the serial buffer for commands
     radio.check();
 }
