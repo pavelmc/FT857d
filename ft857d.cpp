@@ -40,7 +40,7 @@ static FuncPtrVoidByte emptyB[3];
 static FuncPtrVoidLong emptyL[1];
 static FuncPtrToggles toggle[1];
 static FuncPtrByte fbyte[1];
-static FuncPtrULong ulongf[1];
+static FuncPtrLong longf[1];
 
 /*
  * Contructor, simple constructor, it initiates the serial port in the
@@ -52,7 +52,7 @@ void ft857d::begin() {
 }
 
 // Alternative initializer with a custom baudrate and
-void ft857d::begin(unsigned long br, int mode) {
+void ft857d::begin(long br, int mode) {
     /*
      * Arduino custom modes for the serial:
      *  SERIAL_5N1; SERIAL_6N1; SERIAL_7N1; SERIAL_8N1; SERIAL_5N2; SERIAL_6N2;
@@ -84,7 +84,7 @@ void ft857d::addCATAB(void (*userFunc)(void)) {
 }
 
 // AUX: Get the freq of operation, the function must return the freq
-void ft857d::addCATGetFreq(unsigned long (*userFunc)(void)) {
+void ft857d::addCATGetFreq(long (*userFunc)(void)) {
     emptyL[0] = userFunc;
 }
 
@@ -110,8 +110,8 @@ void ft857d::addCATTXStatus(byte (*userFunc)(void)) {
  */
 
 // FREQ SET
-void ft857d::addCATFSet(void (*userFunc)(unsigned long)) {
-    ulongf[0] = userFunc;
+void ft857d::addCATFSet(void (*userFunc)(long)) {
+    longf[0] = userFunc;
 }
 
 /*
@@ -161,7 +161,7 @@ void ft857d::check() {
             }
             break;
         case CAT_FREQ_SET:
-            if (ulongf[0]) {
+            if (longf[0]) {
                 fset();
                 sendACK();
             }
@@ -196,7 +196,7 @@ void ft857d::fset() {
     from_bcd_be();
 
     // call the function with the freq as parameter
-    ulongf[0](freq);
+    longf[0](freq);
 }
 
 // send the TX status
@@ -305,7 +305,7 @@ void ft857d::sendACK() {
  */
 
 // put the freq in the nullpad array
-void ft857d::to_bcd_be(unsigned long f) {
+void ft857d::to_bcd_be(long f) {
     unsigned char a;
 
     // the freq is sent the 10th of the hz

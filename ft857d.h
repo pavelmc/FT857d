@@ -91,11 +91,11 @@
 
 // defining the funtion type by params
 typedef void (*FuncPtrVoid)(void);
-typedef unsigned long (*FuncPtrVoidLong)(void);
+typedef long (*FuncPtrVoidLong)(void);
 typedef byte (*FuncPtrVoidByte)(void);
 typedef void (*FuncPtrToggles)(boolean);
 typedef void (*FuncPtrByte)(byte);
-typedef void (*FuncPtrULong)(unsigned long);
+typedef void (*FuncPtrLong)(long);
 
 /*
  * The class...
@@ -104,14 +104,14 @@ class ft857d {
  public:
     // we have two kind of constructors here
     void begin(); // default for the radio 9600 @ 8N2
-    void begin(unsigned long baudrate, int mode); // custom baudrate and mode
+    void begin(long baudrate, int mode); // custom baudrate and mode
     void check(); // periodic check for serial commands
     // the functions that links the lib with your code
     void addCATPtt(void (*)(boolean));
     void addCATAB(void (*)(void));
-    void addCATFSet(void (*)(unsigned long));
+    void addCATFSet(void (*)(long));
     void addCATMSet(void (*)(byte));
-    void addCATGetFreq(unsigned long (*)(void));
+    void addCATGetFreq(long (*)(void));
     void addCATGetMode(byte (*)(void));
     void addCATSMeter(byte (*)(void));
     void addCATTXStatus(byte (*)(void));
@@ -119,11 +119,11 @@ class ft857d {
  private:
     byte rxBufCount     = 0;
     byte nullPad[5]     = {0,0,0,0,0};
-    unsigned long freq  = 0;
+    long freq           = 0;
     byte ACK            = 0;
     void setFreq(void);
     void from_bcd_be(void);
-    void to_bcd_be(unsigned long);
+    void to_bcd_be(long);
     void sendFreqMode(void);
     void rxStatus(void);
     void sent(void);
