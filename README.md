@@ -39,24 +39,25 @@ This library has been possible from the ideas and code code from the following p
 * FLRig source code
 * Chirp source code
 
-How it works?
-=============
+## Install & How it works? ##
 
-You have to define and register a few callback functions with specific parameters that will be called up on CAT commands reception. It's easy, just see the example sketch.
+See the INSTALL.txt file in the library for instructions.
 
-Author & contributors
-=====================
+About how it works? it's simple, you have to define and register a few custom callback functions and procedures with specific parameters. They will be called upon CAT commands reception to process the requested/sent data.
+
+It's more easy than it sounds, just see the example sketch.
+
+_**Note:** Actually there is a bug that makes the example project not show in the "Examples" menu, I'm working on it._
+
+## Author & contributors ##
 
 The only author is Pavel Milanes, CO7WT, reachable at pavelmc@gmail.com, Until now I have no contributors or sponsors.
 
-
-Where to download the latest version?
-======================================
+## Where to download the latest version? ##
 
 Always download the latest version from the [github repository](https://github.com/pavelmc/FT857d/)
 
 
-If you like to give thanks...
-=============================
+## If you like to give thanks... ##
 
 Please take a look at the Donations and Funding file to keep me creating/updating/sharing my work with you.
