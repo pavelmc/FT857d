@@ -1,5 +1,4 @@
-About donations and funding
-============================
+# About donations and funding #
 
 No payment of whatsoever is required to use this code: this is [Free/Libre Software](https://en.wikipedia.org/wiki/Software_Libre), nevertheless donations and funding are very welcomed.
 

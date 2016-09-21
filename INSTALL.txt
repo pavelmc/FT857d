@@ -1,1 +1,7 @@
-Simply put the "ft857d" folder in your Arduino "libraries" folder.
+Simply put the "FT857d" folder in your Arduino "libraries" folder.
+
+Actually there is a bug hidden in some place that don't allow the example to get showed properly on the "Examples" menu of the Arduino IDE.
+
+But that does not make it bad, just install the lib and copy the example to your sketch folder and run it.
+
+Sorry for the inconvenience, Pavel.

@@ -14,7 +14,7 @@
  * - FLRig source code
  * - Chirp source code
  *
- * You can always found the last version in https://github.com/pavelmc/ft857d/
+ * You can always found the last version in https://github.com/pavelmc/FT857d/
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,10 +51,10 @@ void ft857d::begin() {
     Serial.flush();
 }
 
-// Alternative initializer with a custom baudrate and
+// Alternative initializer with a custom baudrate and mode
 void ft857d::begin(long br, int mode) {
     /*
-     * Arduino custom modes for the serial:
+     * Allowed Arduino modes for the serial:
      *  SERIAL_5N1; SERIAL_6N1; SERIAL_7N1; SERIAL_8N1; SERIAL_5N2; SERIAL_6N2;
      *  SERIAL_7N2; SERIAL_8N2; SERIAL_5E1; SERIAL_6E1; SERIAL_7E1; SERIAL_8E1;
      *  SERIAL_5E2; SERIAL_6E2; SERIAL_7E2; SERIAL_8E2; SERIAL_5O1; SERIAL_6O1;
@@ -132,11 +132,11 @@ void ft857d::addCATMSet(void (*userFunc)(byte)) {
  // check function
 void ft857d::check() {
     // first check if we have at least 5 bytes waiting on the buffer
-    rxBufCount = Serial.available();
-    if (rxBufCount < 5) return;
+    byte i = Serial.available();
+    if (i < 5) return;
 
     // if you got here then there is at least 5 bytes waiting: get it.
-    for (byte i=0; i<5; i++) {
+    for (i=0; i<5; i++) {
         nullPad[i] = Serial.read();
     }
 
@@ -145,31 +145,31 @@ void ft857d::check() {
         case CAT_PTT_ON:
             if (toggle[0]) {
                 toggle[0](true);
-                sendACK();
+                Serial.write(ACK);
             }
             break;
         case CAT_PTT_OFF:
             if (toggle[0]) {
                 toggle[0](false);
-                sendACK();
+                Serial.write(ACK);
             }
             break;
         case CAT_VFO_AB:
             if (empty[0]) {
                 empty[0]();
-                sendACK();
+                Serial.write(ACK);
             }
             break;
         case CAT_FREQ_SET:
             if (longf[0]) {
                 fset();
-                sendACK();
+                Serial.write(ACK);
             }
             break;
         case CAT_MODE_SET:
             if (fbyte[0]) {
                 fbyte[0](nullPad[0]);
-                sendACK();
+                Serial.write(ACK);
             }
             break;
         case CAT_RX_FREQ_CMD:
@@ -185,7 +185,7 @@ void ft857d::check() {
             if (emptyB[2]) sendTxStatus(); // without ACK
             break;
         default:
-            sendACK();
+            Serial.write(ACK);
             break;
     }
 }
@@ -224,7 +224,7 @@ void ft857d::sendFreqMode() {
     // put the mode in the last byte
     nullPad[4] = emptyB[0]();
 
-    // sent id
+    // sent it
     sent(5);
 }
 
@@ -235,17 +235,19 @@ void ft857d::readEeprom() {
     // if the second byte in the request is 0x78 we have to send the first
     // with the 5th bit set if the USB or zero if LSB.
 
+    // mem zone to "read"
+    byte temp = nullPad[1];
+
+    // clear the nullpad
+    npadClear();
+
     // The user registered the function?
-    if (emptyB[0] and nullPad[1] == 0x78) {
-        // clear the nullpad & get the data in place
-        npadClear();
+    if (emptyB[0] and temp == 0x78) {
+        // get the data in place
         nullPad[0] = emptyB[0]();
 
         // check, it must be a bit argument
         if (nullPad[0] != 0) nullPad[0] = 1<<5;
-    } else {
-        // simply send it like LSB
-        npadClear();
     }
 
     // sent the data
@@ -270,7 +272,7 @@ void ft857d::rxStatus() {
     // clear the nullpad
     npadClear();
 
-    // we only return the s-meter here
+    // we only return the s-meter here, just the 4 bits.
     nullPad[0] = emptyB[1]() & 0b00001111;
 
     // sent it
@@ -280,24 +282,13 @@ void ft857d::rxStatus() {
 // procedure to clear the nullpad
 void ft857d::npadClear() {
     // this is used to initialize the nullpad
-    for (byte i=0; i<5; i++) {
-        nullPad[i] = 0;
-    }
+    for (byte i=0; i<5; i++) nullPad[i] = 0;
 }
 
 // sent the data to the PC
 void ft857d::sent(byte amount) {
     // sent the nullpad content
-    for (byte i=0; i<amount; i++) {
-        Serial.write(nullPad[i]);
-    }
-}
-
-// send and ACK from "radio" to PC, this is not documented in the CAT documents
-// but we follows the hamlib standard that obey the radio standard.
-void ft857d::sendACK() {
-    // send and ACK for the command that need it
-    Serial.write(ACK);
+    for (byte i=0; i<amount; i++) Serial.write(nullPad[i]);
 }
 
 /*
@@ -313,6 +304,8 @@ void ft857d::to_bcd_be(long f) {
 
     // clear the nullpad
     npadClear();
+
+    // do the magic
     nullPad[3] &= 0x0f;
     nullPad[3] |= (f%10)<<4;
     f /= 10;

@@ -14,7 +14,7 @@
  * - FLRig source code
  * - Chirp source code
  *
- * You can always found the last version in https://github.com/pavelmc/ft857d/
+ * You can always found the last version in https://github.com/pavelmc/FT857d/
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -117,7 +117,6 @@ class ft857d {
     void addCATTXStatus(byte (*)(void));
 
  private:
-    byte rxBufCount     = 0;
     byte nullPad[5]     = {0,0,0,0,0};
     long freq           = 0;
     byte ACK            = 0;
@@ -132,7 +131,6 @@ class ft857d {
     void sendTxStatus(void);
     void sent(byte);
     void fset(void);
-    void sendACK(void);
 };
 
 #endif
