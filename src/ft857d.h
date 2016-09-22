@@ -115,6 +115,7 @@ class ft857d {
     void addCATGetMode(byte (*)(void));
     void addCATSMeter(byte (*)(void));
     void addCATTXStatus(byte (*)(void));
+    boolean enabled     = true;
 
  private:
     byte nullPad[5]     = {0,0,0,0,0};

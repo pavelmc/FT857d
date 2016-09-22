@@ -131,6 +131,9 @@ void ft857d::addCATMSet(void (*userFunc)(byte)) {
 
  // check function
 void ft857d::check() {
+    // do nothing if it was disabled by software
+    if (!enabled) return;
+
     // first check if we have at least 5 bytes waiting on the buffer
     byte i = Serial.available();
     if (i < 5) return;
