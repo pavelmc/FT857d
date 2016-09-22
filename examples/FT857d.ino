@@ -14,10 +14,7 @@
  * - FLRig source code
  * - Chirp source code
  *
- * You can always found the last version in https://github.com/pavelmc/ft857d/
- *
- * This is the example for the library, just upload it to a Uno and
- * configure your software with 57600 @ 8N1 and enjoy
+ * You can always found the last version in https://github.com/pavelmc/FT857d/
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,14 +31,17 @@
  *
  * **************************************************************************/
 
-// Include the library
+/*
+ * This is the example for the library, just upload it to a Uno and configure
+ * your software with 57600 @ 8N1 and enjoy
+ */
+
 #include <ft857d.h>
 
-// Instantiate the library
 ft857d radio = ft857d();
 
-// Variables
-unsigned long freq = 7110000;
+// variables
+long freq = 7110000;
 boolean ptt = false;
 boolean splitActive = false;
 boolean vfoAActive = true;
@@ -52,17 +52,12 @@ byte mode = 0;
 #define MODE_USB 01
 #define MODE_CW 02
 
-/*
- * DEBUG flag, uncomment it if you want to test it by hand and check a debug
- * comment in the serial console every time you successfully change something
- */
-
+// DEBUG flag, uncomment it if you want to test it by hand
 //#define DEBUG true
 
 // function to run when we must put radio on TX/RX
 void catGoPtt(boolean pttf) {
-    // the var ptt follows the value passed
-    // but you can do a few more things here
+    // the var ptt follows the value passed, but you can do a few more thing here
     ptt = pttf;
 
     #if defined (DEBUG)
@@ -85,7 +80,7 @@ void catGoToggleVFOs() {
 }
 
 // function to set a freq from CAT
-void catSetFreq(unsigned long f) {
+void catSetFreq(long f) {
     // the var freq follows the value passed, but you can do a few more thing here
     freq = f;
 
@@ -109,9 +104,8 @@ void catSetMode(byte m) {
 }
 
 // function to pass the freq to the cat library
-unsigned long catGetFreq() {
-    // this must return the freq as an unsigned long in Hz
-    // you must prepare it before passing it.
+long catGetFreq() {
+    // this must return the freq as an unsigned long in Hz, you must prepare it before
 
     #if defined (DEBUG)
     // debug
@@ -125,7 +119,6 @@ unsigned long catGetFreq() {
 // function to pass the mode to the cat library
 byte catGetMode() {
     // this must return the mode in the wat the CAT protocol expect it
-    // in this example we use the same naming schema that the CAT definition
 
     #if defined (DEBUG)
     // debug
@@ -171,18 +164,16 @@ byte catGetTXStatus() {
     Serial.println("Asked for TX status");
     #endif
 
-    // you have to craft the byte from your data
-    // we will built it from our data
+    // you have to craft the byte from your data, we will built it from
+    // our data
     byte r = 0;
-
     // we fix the TX power to half scale (8)
     r = ptt<<7 + splitActive<<5 + 8;
 
-    // pass it away
     return r;
 }
 
-// main setup procedure
+
 void setup() {
     // preload the vars in the cat library
     radio.addCATPtt(catGoPtt);
@@ -194,17 +185,16 @@ void setup() {
     radio.addCATSMeter(catGetSMeter);
     radio.addCATTXStatus(catGetTXStatus);
 
-    // now we activate the library, 57600 bauds @ 8N1
+    // now we activate the library
     radio.begin(57600, SERIAL_8N1);
 
     #if defined (DEBUG)
     // serial welcome
     Serial.println("CAT Serial Test Ready");
     #endif
+
 }
 
-// main function, 3, 2, 1: GO!
 void loop() {
-    // we must check the serial buffer for commands
     radio.check();
 }
