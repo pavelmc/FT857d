@@ -6,22 +6,22 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-ft857d   KEYWORD1
+ft857d	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-begin       KEYWORD2
-check       KEYWORD2
-addCATPtt   KEYWORD2
-addCATAB    KEYWORD2
-addCATFSet  KEYWORD2
-addCATMSet  KEYWORD2
-addCATGetFreq   KEYWORD2
-addCATGetMode   KEYWORD2
-addCATSMeter    KEYWORD2
-addCATTXStatus  KEYWORD2
+begin	KEYWORD2
+check	KEYWORD2
+addCATPtt	KEYWORD2
+addCATAB	KEYWORD2
+addCATFSet	KEYWORD2
+addCATMSet	KEYWORD2
+addCATGetFreq	KEYWORD2
+addCATGetMode	KEYWORD2
+addCATSMeter	KEYWORD2
+addCATTXStatus	KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
