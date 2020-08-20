@@ -149,8 +149,8 @@ byte catGetTXStatus() {
     /*
      * this must return a byte in wich the different bits means this:
      * 0b abcdefgh
-     *  a = 0 = PTT off
-     *  a = 1 = PTT on
+     *  a = 0 = PTT on
+     *  a = 1 = PTT off
      *  b = 0 = HI SWR off
      *  b = 1 = HI SWR on
      *  c = 0 = split on
