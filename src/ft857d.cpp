@@ -39,8 +39,8 @@ static FuncPtrVoid empty[1];
 static FuncPtrVoidByte emptyB[3];
 static FuncPtrVoidLong emptyL[1];
 static FuncPtrToggles toggle[1];
-static FuncPtrByte fbyte[1];
-static FuncPtrLong longf[1];
+static FuncPtrByte fbyte[2];
+static FuncPtrLong longf[2];
 
 /*
  * Contructor, simple constructor, it initiates the serial port in the
@@ -49,6 +49,7 @@ static FuncPtrLong longf[1];
 void ft857d::begin() {
     Serial.begin(9600, SERIAL_8N2);
     Serial.flush();
+    serialPort = &Serial;
 }
 
 // Alternative initializer with a custom baudrate and mode
@@ -62,6 +63,15 @@ void ft857d::begin(long br, int mode) {
      */
     Serial.begin(br, mode);
     Serial.flush();
+    serialPort = &Serial;
+}
+
+/*
+ * Constructor, accept any Stream ie: HardwareSerial or SoftwareSerial or even BLE Serial
+ *
+ */
+void ft857d::begin(Stream *s) {
+    serialPort = s;
 }
 
 /*
@@ -115,6 +125,16 @@ void ft857d::addCATFSet(void (*userFunc)(long)) {
 }
 
 /*
+ * Linking the function for the Offset Freq, accept an unsigned long as the offset
+ * freq in hz. 
+*/
+
+void ft857d::addCATOffsetFreq(void (*userFunc)(long)) {
+    longf[1] = userFunc;
+}
+
+
+/*
  * Linking the function for the mode set, this expect a function that accepts a
  * byte that is the mode in the way the CAT is defined
  */
@@ -122,6 +142,15 @@ void ft857d::addCATFSet(void (*userFunc)(long)) {
 // MODE SET
 void ft857d::addCATMSet(void (*userFunc)(byte)) {
     fbyte[0] = userFunc;
+}
+
+/*
+ * Linking the function for the offset direction, this expects a function that accepts a
+ * byte that is the encoded direction value.
+ */
+
+void ft857d::addCATOffsetDir(void (*userFunc)(byte)) {
+    fbyte[1] = userFunc;
 }
 
 /*
@@ -135,12 +164,12 @@ void ft857d::check() {
     if (!enabled) return;
 
     // first check if we have at least 5 bytes waiting on the buffer
-    byte i = Serial.available();
+    byte i = serialPort->available();
     if (i < 5) return;
 
     // if you got here then there is at least 5 bytes waiting: get it.
     for (i=0; i<5; i++) {
-        nullPad[i] = Serial.read();
+        nullPad[i] = serialPort->read();
     }
 
     // now chek for the command in the last byte
@@ -148,31 +177,31 @@ void ft857d::check() {
         case CAT_PTT_ON:
             if (toggle[0]) {
                 toggle[0](true);
-                Serial.write(ACK);
+                serialPort->write(ACK);
             }
             break;
         case CAT_PTT_OFF:
             if (toggle[0]) {
                 toggle[0](false);
-                Serial.write(ACK);
+                serialPort->write(ACK);
             }
             break;
         case CAT_VFO_AB:
             if (empty[0]) {
                 empty[0]();
-                Serial.write(ACK);
+                serialPort->write(ACK);
             }
             break;
         case CAT_FREQ_SET:
             if (longf[0]) {
                 fset();
-                Serial.write(ACK);
+                serialPort->write(ACK);
             }
             break;
         case CAT_MODE_SET:
             if (fbyte[0]) {
                 fbyte[0](nullPad[0]);
-                Serial.write(ACK);
+                serialPort->write(ACK);
             }
             break;
         case CAT_RX_FREQ_CMD:
@@ -187,8 +216,20 @@ void ft857d::check() {
         case CAT_TX_DATA_CMD:
             if (emptyB[2]) sendTxStatus(); // without ACK
             break;
+        case CAT_RPTR_OFFSET_CMD:
+            if (fbyte[1]){
+                fbyte[1](nullPad[0]);
+                serialPort->write(ACK);
+            }
+            break;
+        case CAT_RPTR_FREQ_SET:
+            if (longf[1]) {
+                rptfset();
+                serialPort->write(ACK);
+            }
+            break;
         default:
-            Serial.write(ACK);
+            serialPort->write(ACK);
             break;
     }
 }
@@ -201,6 +242,17 @@ void ft857d::fset() {
     // call the function with the freq as parameter
     longf[0](freq);
 }
+
+// Set the Offset frequency
+void ft857d::rptfset() {
+    // reconstruct the freq from the bytes we got
+    from_bcd_be2();
+
+    // call the function with the freq as parameter
+    longf[1](freq);
+}
+
+
 
 // send the TX status
 void ft857d::sendTxStatus() {
@@ -291,7 +343,7 @@ void ft857d::npadClear() {
 // sent the data to the PC
 void ft857d::sent(byte amount) {
     // sent the nullpad content
-    for (byte i=0; i<amount; i++) Serial.write(nullPad[i]);
+    for (byte i=0; i<amount; i++) serialPort->write(nullPad[i]);
 }
 
 /*
@@ -335,4 +387,20 @@ void ft857d::from_bcd_be() {
 
     freq *= 10;
     freq += nullPad[4]>>4;
+}
+
+// put the freq in the freq var from the nullpad array
+// Offset Freq does is only 4 bytes, not the 5 above. 
+// Probably needs a better function name?
+void ft857d::from_bcd_be2() {
+    // {0x00,0x60,0x00,0x00,0xF9} sets offset to 0.600MHz
+    freq = 0;
+    for (byte i=0; i<4; i++) {
+        freq *= 10;
+        freq += nullPad[i]>>4;
+        freq *= 10;
+        freq += nullPad[i] & 0x0f;
+    }
+
+    freq *= 10;
 }
