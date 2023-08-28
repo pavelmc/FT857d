@@ -40,7 +40,7 @@ static FuncPtrVoidByte emptyB[3];
 static FuncPtrVoidLong emptyL[1];
 static FuncPtrVoidLongLong emptyLL[1];
 static FuncPtrToggles toggle[1];
-static FuncPtrByte fbyte[2];
+static FuncPtrByte fbyte[3];
 static FuncPtrLong longf[2];
 
 /*
@@ -114,7 +114,6 @@ void ft857d::addCATTXStatus(byte (*userFunc)(void)) {
     emptyB[2] = userFunc;
 }
 
-
 /*
  * Linking the function for the freq set, this one must link a function that
  * accept a unisgned long as the freq in hz
@@ -155,6 +154,11 @@ void ft857d::addCATMSet(void (*userFunc)(byte)) {
 
 void ft857d::addCATOffsetDir(void (*userFunc)(byte)) {
     fbyte[1] = userFunc;
+}
+
+// CTCSS/DCS Mode
+void ft857d::addCATSQLMode(void (*userFunc)(byte)) {
+    fbyte[2] = userFunc;
 }
 
 /*
@@ -208,6 +212,12 @@ void ft857d::check() {
                 serialPort->write(ACK);
             }
             break;
+        case CAT_SQL_CMD:
+            if (fbyte[2]){
+                fbyte[2](nullPad[0]);
+                serialPort->write(ACK);
+            }
+            break;
         case CAT_RX_FREQ_CMD:
             if (emptyL[0] and emptyB[0]) sendFreqMode(); // without ACK
             break;
@@ -232,7 +242,7 @@ void ft857d::check() {
                 serialPort->write(ACK);
             }
             break;
-        case CAT_CTCSS_TONE:
+        case CAT_SQL_CTCSS_SET:
             if (emptyLL[0]) {
                 rptctcssset();
                 serialPort->write(ACK);

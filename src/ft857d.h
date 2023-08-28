@@ -59,9 +59,8 @@
 #define CAT_TX_DATA_CMD         0xF7
 #define CAT_RX_FREQ_CMD         0x03
 #define CAT_RPTR_OFFSET_CMD     0x09
-#define CAT_CTCSS_TONE          0x0B
 #define CAT_RPTR_FREQ_SET       0xF9
-//~ #define CAT_SQL_CMD             0x0A
+#define CAT_SQL_CMD             0x0A
 // >>> Modes definition
 #define CAT_MODE_LSB            0x00
 #define CAT_MODE_USB            0x01
@@ -73,15 +72,15 @@
 #define CAT_MODE_PKT            0x0C
 #define CAT_MODE_FMN            0x88
 // >>> SQL modes
-//~ #define CAT_SQL_DCS             0x0A
-//~ #define CAT_SQL_DCS_DECD        0x0B
-//~ #define CAT_SQL_DCS_ENCD        0x0C
-//~ #define CAT_SQL_CTCSS           0x2A
-//~ #define CAT_SQL_CTCSS_DECD      0x3A
-//~ #define CAT_SQL_CTCSS_ENCD      0x4A
-//~ #define CAT_SQL_OFF             0x8A
-//~ #define CAT_SQL_CTCSS_SET       0x0B
-//~ #define CAT_SQL_DCS_SET         0x0C
+#define CAT_SQL_DCS             0x0A
+#define CAT_SQL_DCS_DECD        0x0B
+#define CAT_SQL_DCS_ENCD        0x0C
+#define CAT_SQL_CTCSS           0x2A
+#define CAT_SQL_CTCSS_DECD      0x3A
+#define CAT_SQL_CTCSS_ENCD      0x4A
+#define CAT_SQL_OFF             0x8A
+#define CAT_SQL_CTCSS_SET       0x0B
+#define CAT_SQL_DCS_SET         0x0C
 // >>> RPT related
 #define CAT_RPTR_OFFSET_N       0x09
 #define CAT_RPTR_OFFSET_P       0x49
@@ -115,6 +114,7 @@ class ft857d {
     void addCATFSet(void (*)(long));
     void addCATMSet(void (*)(byte));
     void addCATOffsetDir(void (*)(byte));
+    void addCATSQLMode(void (*)(byte));
     void addCATOffsetFreq(void (*)(long));
     void addCATGetFreq(long (*)(void));
     void addCATGetMode(byte (*)(void));
