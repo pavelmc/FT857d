@@ -59,18 +59,19 @@
 #define CAT_TX_DATA_CMD         0xF7
 #define CAT_RX_FREQ_CMD         0x03
 #define CAT_RPTR_OFFSET_CMD     0x09
+#define CAT_CTCSS_TONE          0x0B
 #define CAT_RPTR_FREQ_SET       0xF9
 //~ #define CAT_SQL_CMD             0x0A
 // >>> Modes definition
-//~ #define CAT_MODE_LSB            0x00
-//~ #define CAT_MODE_USB            0x01
-//~ #define CAT_MODE_CW             0x02
-//~ #define CAT_MODE_CWR            0x03
-//~ #define CAT_MODE_AM             0x04
-//~ #define CAT_MODE_FM             0x08
-//~ #define CAT_MODE_DIG            0x0A
-//~ #define CAT_MODE_PKT            0x0C
-//~ #define CAT_MODE_FMN            0x88
+#define CAT_MODE_LSB            0x00
+#define CAT_MODE_USB            0x01
+#define CAT_MODE_CW             0x02
+#define CAT_MODE_CWR            0x03
+#define CAT_MODE_AM             0x04
+#define CAT_MODE_FM             0x08
+#define CAT_MODE_DIG            0x0A
+#define CAT_MODE_PKT            0x0C
+#define CAT_MODE_FMN            0x88
 // >>> SQL modes
 //~ #define CAT_SQL_DCS             0x0A
 //~ #define CAT_SQL_DCS_DECD        0x0B
@@ -96,6 +97,7 @@ typedef byte (*FuncPtrVoidByte)(void);
 typedef void (*FuncPtrToggles)(boolean);
 typedef void (*FuncPtrByte)(byte);
 typedef void (*FuncPtrLong)(long);
+typedef void (*FuncPtrVoidLongLong)(long, long);
 
 /*
  * The class...
@@ -118,12 +120,15 @@ class ft857d {
     void addCATGetMode(byte (*)(void));
     void addCATSMeter(byte (*)(void));
     void addCATTXStatus(byte (*)(void));
+    void addCATSetCTCSSTone(void (*)(long, long));
     boolean enabled     = true;
 
  private:
     byte nullPad[5]     = {0,0,0,0,0};
     long freq           = 0;
     byte ACK            = 0;
+    long txtone         = 0;
+    long rxtone         = 0;
     Stream *serialPort = NULL;
     void setFreq(void);
     void from_bcd_be(void);
@@ -138,6 +143,7 @@ class ft857d {
     void sent(byte);
     void fset();
     void rptfset();
+    void rptctcssset();
 };
 
 #endif

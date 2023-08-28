@@ -38,6 +38,7 @@
 static FuncPtrVoid empty[1];
 static FuncPtrVoidByte emptyB[3];
 static FuncPtrVoidLong emptyL[1];
+static FuncPtrVoidLongLong emptyLL[1];
 static FuncPtrToggles toggle[1];
 static FuncPtrByte fbyte[2];
 static FuncPtrLong longf[2];
@@ -133,6 +134,9 @@ void ft857d::addCATOffsetFreq(void (*userFunc)(long)) {
     longf[1] = userFunc;
 }
 
+void ft857d::addCATSetCTCSSTone(void (*userFunc)(long, long)) {
+    emptyLL[0] = userFunc;
+}
 
 /*
  * Linking the function for the mode set, this expect a function that accepts a
@@ -228,6 +232,11 @@ void ft857d::check() {
                 serialPort->write(ACK);
             }
             break;
+        case CAT_CTCSS_TONE:
+            if (emptyLL[0]) {
+                rptctcssset();
+                serialPort->write(ACK);
+            }
         default:
             serialPort->write(ACK);
             break;
@@ -252,7 +261,30 @@ void ft857d::rptfset() {
     longf[1](freq);
 }
 
+// Set the Offset frequency
+void ft857d::rptctcssset() {
+    // reconstruct the freq from the bytes we got
+    txtone = 0;
+    for (byte i=0; i<2; i++) {
+        txtone *= 10;
+        txtone += nullPad[i]>>4;
+        txtone *= 10;
+        txtone += nullPad[i] & 0x0f;
+    }
+    txtone *= 10;
 
+    rxtone = 0;
+    for (byte i=2; i<4; i++) {
+        rxtone *= 10;
+        rxtone += nullPad[i]>>4;
+        rxtone *= 10;
+        rxtone += nullPad[i] & 0x0f;
+    }
+    rxtone *= 10;
+
+    // call the function with the freq as parameter
+    emptyLL[0](txtone, rxtone);
+}
 
 // send the TX status
 void ft857d::sendTxStatus() {
